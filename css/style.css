@@ -518,6 +518,39 @@ button.ghost:hover { color: var(--txt); border-color: var(--txt-dim); }
 ::-webkit-scrollbar-thumb { background: #2a3344; border-radius: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
+/* ---------- 底部标签栏（仅小屏显示，见下方媒体查询） ---------- */
+#tabbar { display: none; }
+.tab {
+  flex: 1;
+  padding: 12px 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--txt-dim);
+  background: var(--panel);
+  border: none;
+  border-top: 2px solid var(--line);
+}
+.tab.active { color: var(--gold); border-top-color: var(--gold); background: var(--panel-2); }
+.tab:disabled { opacity: 0.4; }
+.tab-verdict {
+  color: #fff;
+  background: linear-gradient(135deg, #c22736, #8f1b28);
+  border-top-color: #6e1d2c;
+  font-size: 15px;
+}
+.tab-verdict:disabled { background: var(--panel-2); color: var(--txt-dim); }
+.tab-verdict.urgent { animation: pulse 1.1s infinite; }
+.tab-badge {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 5px;
+  margin-left: 2px;
+  font-size: 11px;
+  color: #241a02;
+  background: var(--gold);
+  border-radius: 10px;
+}
+
 /* ---------- 窄屏 / 移动端 ---------- */
 @media (max-width: 860px) {
   body { overflow: auto; }
@@ -525,6 +558,21 @@ button.ghost:hover { color: var(--txt); border-color: var(--txt-dim); }
   #client-panel { min-height: 44vh; }
   #board { margin: 0 10px 10px; }
   #hint { margin: 8px 10px 0; }
+}
+/* 小屏竖屏：双标签页布局，锁定整页滚动 */
+@media (max-width: 640px) {
+  body { overflow: hidden; height: 100vh; height: 100dvh; }
+  #stage { display: block; padding: 10px; }
+  #client-panel, #q-panel { height: 100%; min-height: 0; }
+  body.pane-chat #q-panel { display: none; }
+  body.pane-q #client-panel { display: none; }
+  #btn-end { display: none; } /* 中央「判决」标签替代 */
+  #board { margin: 0 10px 6px; min-height: 38px; }
+  #tabbar {
+    display: flex;
+    flex: 0 0 auto;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }
 /* 横屏手机：保持双栏，锁滚动 */
 @media (max-width: 860px) and (orientation: landscape) {

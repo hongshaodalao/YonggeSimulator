@@ -198,8 +198,32 @@ function updateSlots() {
   $("slots").textContent = "剩余提问 " + cur.slots + " / " + cur.maxSlots;
   $("btn-end").disabled = cur.asked.length === 0;
   $("btn-end").classList.toggle("urgent", cur.slots === 0);
+  // 移动端标签栏同步
+  $("tab-q-badge").textContent = cur.slots;
+  $("tab-verdict").disabled = cur.asked.length === 0;
+  $("tab-verdict").classList.toggle("urgent", cur.slots === 0);
   document.querySelectorAll(".fu-btn").forEach((b) => {
     b.disabled = cur.slots <= 0 || cur.ended || cur.follows.includes(b.dataset.qid);
+  });
+}
+
+/* ---------- 移动端标签页 ---------- */
+
+const paneMQ = window.matchMedia("(max-width: 640px)");
+
+function setPane(pane) {
+  document.body.classList.toggle("pane-chat", paneMQ.matches && pane === "chat");
+  document.body.classList.toggle("pane-q", paneMQ.matches && pane === "q");
+  $("tab-chat").classList.toggle("active", paneMQ.matches && pane === "chat");
+  $("tab-q").classList.toggle("active", paneMQ.matches && pane === "q");
+}
+function initPaneSwitcher() {
+  $("tab-chat").addEventListener("click", () => setPane("chat"));
+  $("tab-q").addEventListener("click", () => setPane("q"));
+  $("tab-verdict").addEventListener("click", () => endCall());
+  paneMQ.addEventListener("change", () => {
+    if (!paneMQ.matches) setPane("none"); // 回到桌面/横屏：清除互斥状态
+    else setPane("chat");
   });
 }
 
@@ -360,6 +384,7 @@ function startCase() {
   $("btn-end").disabled = true;
   $("hint").classList.toggle("hidden", !(state.caseIndex === 0 && !state.endless && !challenge));
   sfx.play("ring");
+  setPane("chat"); // 新一单自动切回连线页
   dm("…… 新客户接入连线 ……");
   if (state.exp >= 100) {
     const kq = QUESTIONS.find((q) => q.id === cur.c.keys[0]);
@@ -771,6 +796,8 @@ function buildVerdictButtons() {
 
 function init() {
   buildVerdictButtons();
+  initPaneSwitcher();
+  if (paneMQ.matches) setPane("chat");
 
   $("btn-end").addEventListener("click", endCall);
   $("btn-askmore").addEventListener("click", closeVerdictModal);
