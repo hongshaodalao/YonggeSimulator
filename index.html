@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>勇哥模拟器 · 连线间</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="danmaku"></div>
+
+<header id="topbar">
+  <div class="brand"><span class="live-dot"></span>勇哥连线间</div>
+  <div class="stats">
+    <span id="level-badge" class="badge">Lv1</span>
+    <span id="title-badge" class="badge gold">见习连线员</span>
+    <div class="exp-wrap"><div id="exp-bar"></div><span id="exp-text"></span></div>
+    <span id="followers" class="stat">👁 粉丝 0</span>
+    <span id="rep-stat" class="stat">🤝 声望 50</span>
+    <span id="progress" class="stat">第 1 / 12 单</span>
+    <button id="btn-ach" class="ghost" title="成就墙">🏆 成就</button>
+    <button id="btn-codex" class="ghost" title="案例图鉴">📖 图鉴</button>
+    <button id="btn-daily" class="ghost" title="每日挑战">📅 每日挑战</button>
+    <button id="btn-sound" class="ghost" title="音效开关">🔊</button>
+    <button id="btn-reset" class="ghost">新开档</button>
+  </div>
+</header>
+
+<div id="hint" class="hidden">
+  💡 <b>提示：</b>客户只说好消息，坑都藏在没说的地方。试试先问<b>「前一家店为什么转让」</b>；
+  有的回答底下藏着<b>「追问」</b>，深挖一层才有实锤。问出关键信息会留在下面的记录板上。
+  每单只有 <b>5 次</b>提问机会（追问也占名额），问完点「结束连麦」给判决。🎯 动作类问题升级后解锁。
+</div>
+
+<main id="stage">
+  <section id="client-panel">
+    <div class="client-head">
+      <div id="avatar">🙂</div>
+      <div>
+        <div id="client-name">——</div>
+        <div id="client-tag">餐饮创业者 · 连线中</div>
+      </div>
+    </div>
+    <div id="chat"></div>
+    <button id="btn-end" disabled>📋 结束连麦，给出判决</button>
+  </section>
+
+  <aside id="q-panel">
+    <div class="q-head">❓ 问题卡 <span id="slots">剩余提问 5 / 5</span></div>
+    <div id="q-list"></div>
+  </aside>
+</main>
+
+<footer id="board">
+  <span class="board-label">记录板</span>
+  <div id="clues"><span class="empty">问出关键信息后，线索会留在这里</span></div>
+</footer>
+
+<!-- 开场 -->
+<div id="intro" class="overlay hidden">
+  <div class="sheet">
+    <h1>🎙️ 勇哥模拟器</h1>
+    <div class="sub">餐饮连线 · 问诊 · 判决</div>
+    <p>你是餐饮圈的勇哥。直播间里，一通通连麦打进来——想开店的人只说好消息，坑都藏在没说的地方。</p>
+    <p><b>① 提问：</b>每单 5 次提问机会。有的回答底下可以<b>追问</b>深挖一层（也占名额）——问资金、问位置、问保本账，升级后还能蹲点、找同行打听、查流水。</p>
+    <p><b>② 判决：</b>六选一——<b style="color:#ff4d5e">归零</b> / <b style="color:#34d399">能开</b> / <b style="color:#6fb3ff">缓一缓</b> / <b style="color:#f0b429">换一换</b> / <b style="color:#c792ea">缩规模</b>，以及<b style="color:#e879f9">拆穿</b>：连麦里可能混着来打广告、摸话术的伪装者。</p>
+    <p><b>③ 真相回放：</b>判决后揭晓客户六个月后的真实结局。判对涨经验涨粉，判错掉粉；成就墙等你点亮。</p>
+    <p class="dim">进度与成就自动保存在本机浏览器。故事模式共 12 单，通关后解锁无尽模式。</p>
+    <div class="actions">
+      <button id="btn-start" class="btn-primary">开始连线</button>
+      <button id="btn-continue" class="btn-gold hidden">继续接单</button>
+    </div>
+  </div>
+</div>
+
+<!-- 判决 -->
+<div id="verdict-modal" class="overlay hidden">
+  <div class="sheet">
+    <h2>⚖️ 勇哥，给个准话</h2>
+    <p class="dim">连麦就到这儿。这张嘴一开，人家可能就把定金退了——想清楚再点。</p>
+    <div id="verdict-list"></div>
+    <div class="actions">
+      <button id="btn-askmore" class="btn-plain">← 再问问（若还有名额）</button>
+    </div>
+  </div>
+</div>
+
+<!-- 真相回放 -->
+<div id="result" class="overlay hidden">
+  <div class="sheet">
+    <div id="result-badge" class="result-badge ok">✔ 判断正确</div>
+    <div id="result-compare"></div>
+    <div id="result-who" class="hidden"></div>
+    <div class="reveal-title">六 个 月 后</div>
+    <div id="result-reveal"></div>
+    <div id="result-comment"></div>
+    <div id="result-gains"></div>
+    <div class="actions">
+      <button id="btn-next" class="btn-primary">下一单 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 结算 -->
+<div id="finale" class="overlay hidden">
+  <div class="sheet">
+    <h2>🏁 故事模式通关</h2>
+    <div id="finale-stats"></div>
+    <div class="actions">
+      <button id="btn-endless" class="btn-gold">♾️ 无尽模式 · 继续接单</button>
+      <button id="btn-finale-new" class="btn-plain">新开档</button>
+    </div>
+  </div>
+</div>
+
+<!-- 成就墙 -->
+<div id="ach-modal" class="overlay hidden">
+  <div class="sheet">
+    <h2>🏆 成就墙</h2>
+    <div id="ach-list"></div>
+    <div class="actions">
+      <button id="btn-ach-close" class="btn-plain">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 每日挑战 -->
+<div id="daily-modal" class="overlay hidden">
+  <div class="sheet">
+    <h2>📅 每日挑战</h2>
+    <p class="dim" id="daily-info"></p>
+    <p>同一份日历，全网同一套题。今天是哪 5 单、抽到哪张卷，全看种子脸色——背板在这里没用。</p>
+    <p class="dim">挑战独立计分，不影响你的故事进度、经验和粉丝；可反复挑战刷新今日纪录。</p>
+    <div class="actions">
+      <button id="btn-daily-start" class="btn-gold">开始挑战</button>
+      <button id="btn-daily-cancel" class="btn-plain">先不了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 每日挑战结算 -->
+<div id="daily-result" class="overlay hidden">
+  <div class="sheet">
+    <h2>📅 今日战绩</h2>
+    <div id="daily-result-stats"></div>
+    <div class="actions">
+      <button id="btn-daily-close" class="btn-primary">收摊，回去接单</button>
+    </div>
+  </div>
+</div>
+
+<!-- 老客户回访 -->
+<div id="cb-modal" class="overlay hidden">
+  <div class="sheet">
+    <div class="client-head" style="border:none;background:transparent;padding:0 0 12px">
+      <div id="cb-avatar">🙂</div>
+      <div><div id="cb-name">📞 回访</div><div id="client-tag2" style="font-size:12px;color:var(--gold)">熟悉的老客户 · 回访来电</div></div>
+    </div>
+    <div id="cb-intro" style="background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:14px 16px;font-size:14px;line-height:1.9;margin-bottom:14px"></div>
+    <div id="cb-choices" style="display:grid;gap:10px"></div>
+    <div id="cb-reply-wrap" class="hidden">
+      <div id="cb-reply" style="font-size:14px;line-height:1.9;margin:14px 0 10px;color:#ffd98e"></div>
+      <div id="cb-effect" style="font-size:13px;color:var(--txt-dim);padding:10px 12px;background:#141a25;border-radius:8px;margin-bottom:14px"></div>
+      <div class="actions">
+        <button id="btn-cb-continue" class="btn-primary">继续连线 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 案例图鉴 -->
+<div id="codex-modal" class="overlay hidden">
+  <div class="sheet">
+    <h2>📖 案例图鉴</h2>
+    <p class="dim" id="codex-stats"></p>
+    <div id="codex-grid"></div>
+    <p class="dim" style="margin-top:16px">头衔特权（当前生效状态）：</p>
+    <div id="perk-list"></div>
+    <div class="actions">
+      <button id="btn-codex-close" class="btn-plain">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 成就 toast -->
+<div id="toasts"></div>
+
+<script src="js/audio.js"></script>
+<script src="js/data/questions.js"></script>
+<script src="js/data/cases.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
