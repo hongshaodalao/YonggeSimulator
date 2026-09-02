@@ -513,6 +513,22 @@ button.ghost:hover { color: var(--txt); border-color: var(--txt-dim); }
 .codex-item.got b { color: #7ce0bb; }
 .codex-item.got span { color: var(--green); }
 
+/* 单案评级 */
+.result-grade {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  letter-spacing: 1px;
+}
+.result-grade.g4 { background: #3a2f14; color: var(--gold); border: 1px solid #6b5618; }
+.result-grade.g3 { background: #0e2b22; color: var(--green); border: 1px solid #1d5a44; }
+.result-grade.g2 { background: #12253a; color: #6fb3ff; border: 1px solid #274b73; }
+.result-grade.g1 { background: #232b3a; color: var(--txt-dim); border: 1px solid var(--line); }
+.result-grade.g0 { background: #3a1218; color: #ff8b96; border: 1px solid #6e1d2c; }
+
 /* 滚动条 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #2a3344; border-radius: 4px; }

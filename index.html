@@ -18,6 +18,7 @@
     <div class="exp-wrap"><div id="exp-bar"></div><span id="exp-text"></span></div>
     <span id="followers" class="stat">👁 粉丝 0</span>
     <span id="rep-stat" class="stat">🤝 声望 50</span>
+    <span id="heat-stat" class="stat hidden">🔥 人气 50</span>
     <span id="progress" class="stat">第 1 / 12 单</span>
     <button id="btn-ach" class="ghost" title="成就墙">🏆 成就</button>
     <button id="btn-codex" class="ghost" title="案例图鉴">📖 图鉴</button>
@@ -97,6 +98,7 @@
 <div id="result" class="overlay hidden">
   <div class="sheet">
     <div id="result-badge" class="result-badge ok">✔ 判断正确</div>
+    <div id="result-grade" class="result-grade hidden">单案评级 S</div>
     <div id="result-compare"></div>
     <div id="result-who" class="hidden"></div>
     <div class="reveal-title">六 个 月 后</div>
@@ -105,6 +107,36 @@
     <div id="result-gains"></div>
     <div class="actions">
       <button id="btn-next" class="btn-primary">下一单 →</button>
+      <button id="btn-share-story" class="btn-plain">📋 复制战绩</button>
+    </div>
+  </div>
+</div>
+
+<!-- 掉播结算 -->
+<div id="offair" class="overlay hidden">
+  <div class="sheet">
+    <h2>🔥 直播间掉播了</h2>
+    <div id="offair-stats"></div>
+    <div class="actions">
+      <button id="btn-reopen" class="btn-gold">🔥 重新开播</button>
+      <button id="btn-back-story" class="btn-plain">🎬 回故事模式</button>
+    </div>
+    <div class="actions">
+      <button id="btn-share-offair" class="btn-plain">📋 复制战绩</button>
+    </div>
+  </div>
+</div>
+
+<!-- 每日挑战结算 -->
+<div id="daily-result" class="overlay hidden">
+  <div class="sheet">
+    <h2>📅 今日战绩</h2>
+    <div id="daily-result-stats"></div>
+    <div class="actions">
+      <button id="btn-daily-close" class="btn-primary">收摊，回去接单</button>
+    </div>
+    <div class="actions">
+      <button id="btn-share-daily" class="btn-plain">📋 复制战绩</button>
     </div>
   </div>
 </div>
@@ -142,17 +174,6 @@
     <div class="actions">
       <button id="btn-daily-start" class="btn-gold">开始挑战</button>
       <button id="btn-daily-cancel" class="btn-plain">先不了</button>
-    </div>
-  </div>
-</div>
-
-<!-- 每日挑战结算 -->
-<div id="daily-result" class="overlay hidden">
-  <div class="sheet">
-    <h2>📅 今日战绩</h2>
-    <div id="daily-result-stats"></div>
-    <div class="actions">
-      <button id="btn-daily-close" class="btn-primary">收摊，回去接单</button>
     </div>
   </div>
 </div>

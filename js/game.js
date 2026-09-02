@@ -29,6 +29,8 @@ const ACHIEVEMENTS = [
   { id: "fans1k",     name: "千粉直播间", desc: "粉丝数达到 1000" },
   { id: "title_top",  name: "勇哥本尊",   desc: "头衔达到『勇哥本尊』" },
   { id: "endless10",  name: "流量常青树", desc: "无尽模式累计判对 10 单" },
+  { id: "s12",        name: "S级半打",    desc: "图鉴中获得 12 个 S 级评价" },
+  { id: "s24",        name: "完美图鉴",   desc: "图鉴 24 格全部 S 级" },
 ];
 
 const TITLES = [
@@ -59,6 +61,7 @@ const state = {
   exp: 0, followers: 0, caseIndex: 0, endless: false,
   achievements: [], sound: true, streak: 0, storyWrong: 0, endlessWins: 0,
   rep: 50, pendingCallbacks: [], firedCallbacks: [], codex: {},
+  heat: 50, endlessRun: 0, endlessBest: 0,
 };
 let cur = null; // 当前案件运行时：{ c, asked, follows, slots, maxSlots, freeActionUsed, ended }
 
@@ -67,12 +70,12 @@ const $ = (id) => document.getElementById(id);
 /* ================= 存档 ================= */
 
 function saveGame() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 3, ...state })); } catch (e) { /* file:// 隐私模式等场景忽略 */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 4, ...state })); } catch (e) { /* file:// 隐私模式等场景忽略 */ }
 }
 function loadGame() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (s && (s.v === 1 || s.v === 2 || s.v === 3)) {
+    if (s && (s.v === 1 || s.v === 2 || s.v === 3 || s.v === 4)) {
       state.exp = s.exp || 0;
       state.followers = s.followers || 0;
       state.caseIndex = s.caseIndex || 0;
@@ -85,7 +88,17 @@ function loadGame() {
       state.rep = typeof s.rep === "number" ? s.rep : 50;
       state.pendingCallbacks = Array.isArray(s.pendingCallbacks) ? s.pendingCallbacks : [];
       state.firedCallbacks = Array.isArray(s.firedCallbacks) ? s.firedCallbacks : [];
-      state.codex = s.codex && typeof s.codex === "object" ? s.codex : {};
+      state.heat = typeof s.heat === "number" ? s.heat : 50;
+      state.endlessRun = s.endlessRun || 0;
+      state.endlessBest = s.endlessBest || 0;
+      // codex 迁移：v3 数值(1=遭遇) → {g, seen}
+      const raw = s.codex && typeof s.codex === "object" ? s.codex : {};
+      const cx = {};
+      for (const k of Object.keys(raw)) {
+        const v = raw[k];
+        cx[k] = (v && typeof v === "object") ? { g: v.g || 0, seen: 1 } : { g: 0, seen: 1 };
+      }
+      state.codex = cx;
       return true;
     }
   } catch (e) { /* 忽略坏档 */ }
@@ -127,6 +140,8 @@ function renderTopBar() {
   }
   $("followers").textContent = "👁 粉丝 " + state.followers.toLocaleString();
   $("rep-stat").textContent = "🤝 声望 " + state.rep;
+  $("heat-stat").classList.toggle("hidden", !state.endless);
+  if (state.endless) $("heat-stat").textContent = "🔥 人气 " + Math.round(state.heat);
   $("progress").textContent = challenge
     ? "每日挑战 " + Math.min(challenge.i + 1, DAILY_LEN) + " / " + DAILY_LEN
     : state.endless
@@ -514,6 +529,12 @@ function pickVerdict(vid) {
     state.streak = 0;
     if (!state.endless) state.storyWrong++;
   }
+  let endlessOver = false;
+  if (state.endless) {
+    state.heat = Math.max(0, Math.min(100, state.heat + (correct ? 8 : -15)));
+    state.endlessRun++;
+    endlessOver = state.heat <= 0;
+  }
 
   const isLastStoryCase = !state.endless && state.caseIndex >= CASES.length - 1;
   if (!state.endless) state.caseIndex++;
@@ -525,7 +546,7 @@ function pickVerdict(vid) {
   renderTopBar();
   sfx.play(correct ? (c.impostor ? "bust" : "correct") : "wrong");
   dmFrom(correct ? (c.impostor ? DM_BUST : DM_OK) : DM_BAD);
-  showResult({ vid, correct, keysHit, fuHit, expGain, fanDelta, isLastStoryCase, bustWrong });
+  showResult({ vid, correct, keysHit, fuHit, expGain, fanDelta, isLastStoryCase, bustWrong, endlessOver });
 }
 
 // 每日挑战：独立计分，不动主存档数值
@@ -550,13 +571,38 @@ function pickVerdictDaily(vid) {
   showResult({ vid, correct, keysHit, fuHit, expGain, fanDelta: 0, isLastStoryCase: done, bustWrong });
 }
 
+/* ================= 单案评级 ================= */
+
+const GRADE_META = { 4: ["S", "g4"], 3: ["A", "g3"], 2: ["B", "g2"], 1: ["C", "g1"] };
+function gradeRank(correct, keysHit, fuHit, fuTotal) {
+  if (!correct) return 0;
+  if (keysHit === 3 && fuHit >= 1) return 4;
+  if (keysHit >= 2) return 3;
+  if (keysHit >= 1) return 2;
+  return 1;
+}
+
 function showResult(r) {
   const c = cur.c;
-  state.codex[c.id + ":" + (c.vi || 0)] = 1;
+  // 图鉴记录：评级只升不降
+  const fuTotal = Object.values(c.answers).filter((a) => a.followup).length;
+  const rank = gradeRank(r.correct, r.keysHit, r.fuHit, fuTotal);
+  const cxKey = c.id + ":" + (c.vi || 0);
+  const prev = state.codex[cxKey] || { g: 0, seen: 0 };
+  state.codex[cxKey] = { g: Math.max(prev.g || 0, rank), seen: 1 };
   saveGame();
+
   $("result-compare").innerHTML =
     '你的判决：<b class="' + (r.correct ? "ok" : "bad") + '">' + VERDICTS[r.vid].label + "</b>" +
     '　｜　勇哥的判决：<b>' + VERDICTS[c.correct].label + "</b>";
+  const gm = GRADE_META[rank];
+  if (gm) {
+    $("result-grade").textContent = "单案评级 " + gm[0];
+    $("result-grade").className = "result-grade " + gm[1];
+  } else {
+    $("result-grade").textContent = "单案评级 ——（判错不评级）";
+    $("result-grade").className = "result-grade g0";
+  }
   if (c.impostor && r.correct) {
     $("result-who").textContent = "🎭 真实身份：" + c.who;
     $("result-who").classList.remove("hidden");
@@ -575,20 +621,79 @@ function showResult(r) {
     " ｜ 关键问题 ×" + r.keysHit + " +" + 10 * r.keysHit +
     " ｜ 追问 ×" + r.fuHit + " +" + 5 * r.fuHit + "）" +
     "　｜　粉丝 " + (r.fanDelta >= 0 ? "+" : "") + r.fanDelta;
-  $("btn-next").textContent = challenge
-    ? (r.isLastStoryCase ? "查看战绩 →" : "下一题 →")
-    : (r.isLastStoryCase ? "🏁 查看结算" : "下一单 →");
+  const sCount = Object.values(state.codex).filter((e) => e && e.g === 4).length;
+  if (sCount >= 12) unlockAch("s12");
+  if (sCount >= 24) unlockAch("s24");
+  $("btn-next").textContent = r.endlessOver
+    ? "🔥 查看掉播结算"
+    : challenge
+      ? (r.isLastStoryCase ? "查看战绩 →" : "下一题 →")
+      : (r.isLastStoryCase ? "🏁 查看结算" : "下一单 →");
   $("result").classList.remove("hidden");
 }
 
 function nextFromResult() {
   $("result").classList.add("hidden");
   if (challenge) { dailyNext(); return; }
+  if (state.endless && state.heat <= 0) { showOffAir(); return; }
   if (!state.endless && state.caseIndex >= CASES.length) {
     if (state.storyWrong === 0) unlockAch("allclear");
     showFinale();
   } else {
     startCase();
+  }
+}
+
+/* ================= 无尽人气 ================= */
+
+function showOffAir() {
+  const isBest = state.endlessRun > state.endlessBest && state.endlessRun > 0;
+  if (isBest) { state.endlessBest = state.endlessRun; saveGame(); }
+  $("offair-stats").innerHTML =
+    "直播间人气耗尽，掉播了：<br><br>" +
+    "本次存活 <b>" + state.endlessRun + "</b> 单 ・ 历史最佳 <b>" + state.endlessBest + "</b> 单<br>" +
+    "无尽累计判对 <b>" + state.endlessWins + "</b> 单<br><br>" +
+    (isBest ? "🎉 刷新生存纪录！" : "调整心态，换个开播姿势再来。");
+  $("offair").classList.remove("hidden");
+  renderTopBar();
+}
+
+/* ================= 战绩分享 ================= */
+
+function buildShareText(kind) {
+  const entries = Object.values(state.codex).filter((e) => e && e.seen);
+  const sCount = entries.filter((e) => e.g === 4).length;
+  const lines = ["🎙️ 勇哥模拟器战绩"];
+  lines.push("头衔：" + titleOf(state.exp) + "（经验 " + state.exp + "）");
+  lines.push("粉丝 " + state.followers.toLocaleString() + " ｜ 江湖声望 " + state.rep);
+  lines.push("图鉴：" + entries.length + "/24（S 级 " + sCount + "）");
+  if (kind === "daily") {
+    const b = dailyBest(todaySeed());
+    lines.push("今日挑战：" + (b ? b.score + " 分（判对 " + b.correct + "/5）" : "未挑战"));
+  }
+  if (kind === "offair") lines.push("无尽生存：最佳 " + state.endlessBest + " 单");
+  if (state.endless) lines.push("🔥 当前人气 " + Math.round(state.heat));
+  lines.push("https://hongshaodalao.github.io/YonggeSimulator/");
+  return lines.filter((l) => l !== "").join("\n");
+}
+function copyShare(kind) {
+  const text = buildShareText(kind);
+  const done = () => showToast("📋 战绩已复制", "去群里炫耀一下吧");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    done();
+  } catch (e) {
+    showToast("复制失败", "浏览器限制了剪贴板，请手动截图分享");
   }
 }
 
@@ -663,6 +768,8 @@ function openAchievements() {
 
 function startEndless() {
   state.endless = true;
+  state.heat = 50;
+  state.endlessRun = 0;
   saveGame();
   $("finale").classList.add("hidden");
   startCase();
@@ -672,6 +779,7 @@ function newGame() {
   state.exp = 0; state.followers = 0; state.caseIndex = 0; state.endless = false;
   state.achievements = []; state.streak = 0; state.storyWrong = 0; state.endlessWins = 0;
   state.rep = 50; state.pendingCallbacks = []; state.firedCallbacks = [];
+  state.heat = 50; state.endlessRun = 0;
   saveGame();
   $("intro").classList.add("hidden");
   $("finale").classList.add("hidden");
@@ -744,22 +852,30 @@ function chooseCallback(ch) {
 function openCodex() {
   const wrap = $("codex-grid");
   wrap.innerHTML = "";
-  let seen = 0;
+  let seen = 0, sCount = 0;
   for (const c of CASES) {
     const count = 1 + (c.variants ? c.variants.length : 0);
     for (let vi = 0; vi < count; vi++) {
-      const got = !!state.codex[c.id + ":" + vi];
+      const e = state.codex[c.id + ":" + vi];
+      const got = !!(e && e.seen);
       if (got) seen++;
+      if (got && e.g === 4) sCount++;
       const src = vi === 0 ? c : c.variants[vi - 1];
       const div = document.createElement("div");
       div.className = "codex-item" + (got ? " got" : "");
       div.innerHTML = "<b></b><span></span>";
       div.querySelector("b").textContent = c.name + " · " + (vi === 0 ? "原版" : "B卷");
-      div.querySelector("span").textContent = got ? "判决：" + VERDICTS[src.correct].label : "？？？ 未遭遇";
+      let sub;
+      if (!got) sub = "？？？ 未遭遇";
+      else {
+        const gtag = e.g === 4 ? " ｜ 🏆S" : e.g === 3 ? " ｜ ✅A" : e.g === 2 ? " ｜ ✅B" : e.g === 1 ? " ｜ ✅C" : " ｜ 已遭遇";
+        sub = "判决：" + VERDICTS[src.correct].label + gtag;
+      }
+      div.querySelector("span").textContent = sub;
       wrap.appendChild(div);
     }
   }
-  $("codex-stats").textContent = "已遭遇 " + seen + " / " + wrap.childElementCount + " 种连线体验（跨存档累计）";
+  $("codex-stats").textContent = "已遭遇 " + seen + " / " + wrap.childElementCount + "（S 级 " + sCount + "）· 跨存档累计";
   const pl = $("perk-list");
   pl.innerHTML = "";
   for (const [min, desc] of [
@@ -826,6 +942,22 @@ function init() {
     if (!state.endless && state.caseIndex >= CASES.length) showFinale();
     else startCase();
   });
+  $("btn-share-story").addEventListener("click", () => copyShare("story"));
+  $("btn-share-daily").addEventListener("click", () => copyShare("daily"));
+  $("btn-reopen").addEventListener("click", () => {
+    state.heat = 50; state.endlessRun = 0;
+    saveGame();
+    $("offair").classList.add("hidden");
+    startCase();
+  });
+  $("btn-back-story").addEventListener("click", () => {
+    state.endless = false; state.heat = 50; state.endlessRun = 0;
+    saveGame();
+    $("offair").classList.add("hidden");
+    if (state.caseIndex >= CASES.length) showFinale();
+    else startCase();
+  });
+  $("btn-share-offair").addEventListener("click", () => copyShare("offair"));
   $("btn-sound").addEventListener("click", () => {
     state.sound = !state.sound;
     $("btn-sound").textContent = state.sound ? "🔊" : "🔇";
