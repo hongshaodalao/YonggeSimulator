@@ -28,6 +28,12 @@ const QUESTIONS = [
   { id: "m_why",       cat: "动机", unlock: 1, text: "为什么想开店？现在还在上班吗？" },
   { id: "m_research",  cat: "动机", unlock: 1, text: "去别人店里打过工或者蹲过点吗？调研了多久？" },
 
+  // 加盟类（仅 franchise 案例显示）
+  { id: "f_channel", cat: "加盟", unlock: 1, text: "这个加盟品牌，你是从哪里知道的？刷到的广告还是朋友开的店？" },
+  { id: "f_hq",      cat: "加盟", unlock: 1, text: "总部在哪个城市？公司什么时候成立的？" },
+  { id: "f_visit",   cat: "加盟", unlock: 1, text: "总部去过吗？他们的直营店你进过后厨吗？" },
+  { id: "f_stores",  cat: "加盟", unlock: 1, text: "全国现在有多少家店？开满两年的有多少？" },
+
   // 高级动作
   { id: "a_stakeout",  cat: "动作", unlock: 2, text: "亲自去蹲点数人流，早中晚各蹲一小时" },
   { id: "a_askpeer",   cat: "动作", unlock: 2, text: "找同行打听，套一套这条街的真实经营状况" },

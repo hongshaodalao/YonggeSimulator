@@ -161,13 +161,14 @@ function renderClient() {
 
 /* ================= 渲染：问题卡 ================= */
 
-const CAT_ORDER = ["资金", "位置", "经营", "动机", "动作"];
+const CAT_ORDER = ["资金", "加盟", "位置", "经营", "动机", "动作"];
 
 function renderQuestions() {
   const lvl = levelOf();
   const list = $("q-list");
   list.innerHTML = "";
   for (const cat of CAT_ORDER) {
+    if (cat === "加盟" && !cur.c.franchise) continue; // 加盟问题只对加盟案例出现
     const qs = QUESTIONS.filter((q) => q.cat === cat);
     if (!qs.length) continue;
     const h = document.createElement("div");
