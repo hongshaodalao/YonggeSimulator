@@ -223,6 +223,39 @@ function updateSlots() {
   });
 }
 
+/* ---------- 位置图片 ---------- */
+
+// 这些案例的 B 卷位置不同，用独立图组；其余案例两卷共用
+const IMG_B_VARIANTS = { c02: 1, c03: 1, c04: 1, c05: 1, x01: 1, c06: 1, c08: 1 };
+function locImgPrefix() {
+  return cur.c.id + ((cur.c.vi === 1 && IMG_B_VARIANTS[cur.c.id]) ? "b" : "");
+}
+function appendLocationImages() {
+  const prefix = locImgPrefix();
+  const wrap = document.createElement("div");
+  wrap.className = "loc-imgs";
+  let failed = 0;
+  ["a", "b", "c"].forEach((suf) => {
+    const img = document.createElement("img");
+    img.src = "img/" + prefix + "-" + suf + ".jpg";
+    img.alt = "位置照片 " + suf.toUpperCase();
+    img.loading = "lazy";
+    img.addEventListener("click", () => openLightbox(img.src, suf));
+    img.addEventListener("error", () => {
+      img.remove();
+      if (++failed >= 3) wrap.remove(); // 图组缺失时整体不显示
+    });
+    wrap.appendChild(img);
+  });
+  $("chat").appendChild(wrap);
+  $("chat").scrollTop = $("chat").scrollHeight;
+}
+function openLightbox(src, suf) {
+  $("lightbox-img").src = src;
+  $("lightbox-cap").textContent = suf === "c" ? "🗺 位置示意图（客户手机截图）" : "📷 现场照片 " + suf.toUpperCase();
+  $("lightbox").classList.remove("hidden");
+}
+
 /* ---------- 移动端标签页 ---------- */
 
 const paneMQ = window.matchMedia("(max-width: 640px)");
@@ -437,6 +470,10 @@ function ask(qid) {
     appendChat("a", ans.text, ans.flag);
     addClue(ans.clue, ans.flag);
     sfx.play(ans.flag === "danger" ? "danger" : ans.flag === "good" ? "good" : "click");
+    if (qid === "w_location") {
+      appendLocationImages();
+      dm("📷 客户发来了现场照片");
+    }
     if (ans.followup && !cur.follows.includes(qid)) appendFollowupBtn(qid);
   }, 260);
 
@@ -958,6 +995,7 @@ function init() {
     else startCase();
   });
   $("btn-share-offair").addEventListener("click", () => copyShare("offair"));
+  $("lightbox").addEventListener("click", () => $("lightbox").classList.add("hidden"));
   $("btn-sound").addEventListener("click", () => {
     state.sound = !state.sound;
     $("btn-sound").textContent = state.sound ? "🔊" : "🔇";

@@ -529,6 +529,24 @@ button.ghost:hover { color: var(--txt); border-color: var(--txt-dim); }
 .result-grade.g1 { background: #232b3a; color: var(--txt-dim); border: 1px solid var(--line); }
 .result-grade.g0 { background: #3a1218; color: #ff8b96; border: 1px solid #6e1d2c; }
 
+/* 位置照片（客户发图） */
+.loc-imgs {
+  display: flex;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: -2px;
+}
+.loc-imgs img {
+  width: 31%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  cursor: zoom-in;
+  transition: border-color 0.15s;
+}
+.loc-imgs img:hover { border-color: var(--gold); }
+
 /* 滚动条 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #2a3344; border-radius: 4px; }
